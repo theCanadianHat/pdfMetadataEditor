@@ -2,6 +2,7 @@ package njh.tools.pdf.editor;
 
 import lombok.extern.slf4j.Slf4j;
 import njh.tools.pdf.driver.cmdLine.PdfEditorCommandLineArgs;
+import njh.tools.pdf.editor.exception.PdfEditorException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.jetbrains.annotations.NotNull;
@@ -16,7 +17,7 @@ import java.util.Objects;
  */
 @Slf4j
 public class PdfEditor {
-    private PdfEditorCommandLineArgs editorArgs;
+    private final PdfEditorCommandLineArgs editorArgs;
 
     public PdfEditor(final @NotNull PdfEditorCommandLineArgs editorArgs) {
         this.editorArgs = Objects.requireNonNull(editorArgs);
@@ -25,30 +26,32 @@ public class PdfEditor {
     public void addMetadataTag() {
         if(editorArgs.isValid()) {
             try {
+                //load input file
                 PDDocument document = PDDocument.load(new File(editorArgs.getInputFileName().replaceAll("\\\\","/")));
                 if(editorArgs.isDebugEnabled()) log.debug("PDF file loaded with path: " + editorArgs.getInputFileName());
+                //update metadata
                 PDDocumentInformation information = document.getDocumentInformation();
                 information.setCustomMetadataValue(editorArgs.getMetadataTagName(), editorArgs.getMetadataTagValue());
                 if(editorArgs.isDebugEnabled()) log.debug("New metadata tag and value added: "
                         + editorArgs.getMetadataTagName() + "=" + editorArgs.getMetadataTagValue());
+                //save new doc
                 document.save(new File(editorArgs.getOutputFileName()));
                 if (editorArgs.isDebugEnabled()) log.debug("New PDF file saved with path: " + editorArgs.getOutputFileName());
-                listCustomMetadata(document.getDocumentInformation());
+                printMetadata(document.getDocumentInformation());
                 document.close();
             } catch (IOException e) {
                 // TODO: 2/5/2022 need to create new exception to tell caller PDF can't load
                 if(editorArgs.isDebugEnabled()) e.printStackTrace();
-                System.out.println("Unable to load PDF");
-                return;
+                throw new PdfEditorException("Unable to open/save PDF.", e);
             }
         } else {
-            //todo add exception to throw
-            System.out.println("Arguments are not valid, nothing to do.");
+            throw new PdfEditorException("The arguments are not valid, I really shouldn't try.");
         }
     }
 
-    public void listCustomMetadata(@NotNull final PDDocumentInformation information) {
-        for (String key :information.getMetadataKeys()) {
+    public void printMetadata(@NotNull final PDDocumentInformation information) {
+        Objects.requireNonNull(information);
+        for (String key : information.getMetadataKeys()) {
             System.out.println("Custom metadata found: " + key + "=" + information.getCustomMetadataValue(key));
         }
     }
