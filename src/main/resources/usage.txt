@@ -1,0 +1,5 @@
+Usage: jar <jar>.jar --in=<path> --out=<path> --mdt=<md tag> --mdv=<md value>
+    --in    : file path to the input PDF you wish to add a new metadata tag to.
+    --out   : file path to the output PDF with the newly added metadata tag and value.
+    --mdt   : tag name you are adding.
+    --mdv   : value for the tag.
